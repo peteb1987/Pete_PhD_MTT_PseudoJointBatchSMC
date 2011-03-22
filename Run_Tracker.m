@@ -5,12 +5,12 @@
 clup
 dbstop if error
 
-% Set a standard random stream (for repeatability)
-s = RandStream('mt19937ar', 'seed', 0);
-RandStream.setDefaultStream(s);
-
 % Define all the necessary parameters in a global structure.
 DefineParameters;
+
+% Set a standard random stream (for repeatability)
+s = RandStream('mt19937ar', 'seed', Par.rand_seed);
+RandStream.setDefaultStream(s);
 
 % Specify target behaviour
 TargSpec = SpecifyTargetBehaviour;
@@ -26,13 +26,13 @@ fig = PlotTrueState(TrueState);
 PlotObs(Observs, detections);
 
 % Run tracker
-[ Distns, ESS_post, ESS_pre, num_resamples ] = MultiTargetTrack( Observs, {TargSpec(:).state} );
+[ Distns, ObsTargIndexes, ESS_post, ESS_pre, num_resamples ] = MultiTargetTrack( Observs, {TargSpec(:).state} );
 
-% % Plot final estimates
-% PlotTracks(Distns{Par.T}, fig);
-% 
-% % Analyse associations
-% [ass, count] = AnalyseAss( detections, Distns);
+% Plot final estimates
+PlotTracks(Distns{Par.T}, fig);
+
+% Analyse associations
+[ass, count] = AnalyseAss( detections, Distns, Par.T);
 % 
 % % Plot ESS
 % % figure, plot(ESS_post), ylim([0 Par.NumPart])

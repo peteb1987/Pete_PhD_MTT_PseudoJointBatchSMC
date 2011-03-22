@@ -23,6 +23,7 @@ TargSpec = repmat(struct('birth', 0, 'death', 0, 'state', zeros(4, 1), 'acc', []
 for j = 1:N
     TargSpec(j).birth = 1;
     TargSpec(j).death = T + 1;
+    [~]=unidrnd(T);
     num = TargSpec(j).death - TargSpec(j).birth;
     TargSpec(j).state = zeros(4, 1);
     if Par.FLAG_ObsMod == 0
@@ -44,11 +45,11 @@ end
 %%% Manually overwrite individual target values if desired              %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% TargSpec(1).state = [-100, 100, 3, 0]';
-% TargSpec(2).state = [-100, 90, 3, 0]';
-% TargSpec(3).state = [-100, 80, 3, 0]';
-% TargSpec(4).state = [-100, 110, 3, 0]';
-% TargSpec(5).state = [-100, 120, 3, 0]';
+TargSpec(1).state = [-100, 100, 3, 0]';
+TargSpec(2).state = [-100, 90, 3, 0]';
+TargSpec(3).state = [-100, 80, 3, 0]';
+TargSpec(4).state = [-100, 110, 3, 0]';
+TargSpec(5).state = [-100, 120, 3, 0]';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% End of manual overwrites                                            %%%

@@ -47,20 +47,23 @@ classdef Track < handle
         
         % Get Assoc
         function assoc = GetAssoc(obj, t)
-            k = obj.Time(t);
-            if (k<0)||(k>length(obj.assoc))
-                assoc = 0;
-            else
-                assoc = obj.assoc(k);
-            end
+%             k = obj.Time(t);
+%             if (k<0)||(k>length(obj.assoc))
+%                 assoc = 0;
+%             else
+%                 assoc = obj.assoc(k);
+%             end
+            k = t - obj.birth + 1;
+            assoc = obj.assoc(k);
         end
         
         
         
         % Set Assoc
         function SetAssoc(obj, t, assoc)
-            k = obj.Time(t);
-            assert((k>0)&&(k<=length(obj.assoc)), 'Cannot set an association because the track is not present at the given time')
+%             k = obj.Time(t);
+%             assert((k>0)&&(k<=length(obj.assoc)), 'Cannot set an association because the track is not present at the given time')
+            k = t - obj.birth + 1;
             obj.assoc(k) = assoc;
         end
         
@@ -68,8 +71,9 @@ classdef Track < handle
         
         % Get State
         function state = GetState(obj, t)
-            k = obj.Time(t);
-            assert((k>=0)&&(k<=length(obj.state)), 'Cannot get state because the track is not present at the given time')
+%             k = obj.Time(t);
+%             assert((k>=0)&&(k<=length(obj.state)), 'Cannot get state because the track is not present at the given time')
+            k = t - obj.birth + 1;
             state = obj.state{k};
         end
         
@@ -77,8 +81,9 @@ classdef Track < handle
         
         % Set State
         function SetState(obj, t, state)
-            k = obj.Time(t);
-            assert((k>0)&&(k<=length(obj.state)), 'Cannot set a state because the track is not present at the given time')
+%             k = obj.Time(t);
+%             assert((k>0)&&(k<=length(obj.state)), 'Cannot set a state because the track is not present at the given time')
+            k = t - obj.birth + 1;
             obj.state{k} = state;
         end
         

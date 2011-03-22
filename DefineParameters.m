@@ -2,6 +2,9 @@
 
 global Par;
 
+% Set random seed
+Par.rand_seed = 3;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Flags                                                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12,7 +15,7 @@ Par.FLAG_ObsMod = 1;        % 0 = cartesian, 1 = polar,
 %%% Scene parameters                                                    %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.T = 50;                             % Number of frames
+Par.T = 20;                             % Number of frames
 Par.P = 1; P = Par.P;                   % Sampling period
 Par.Xmax = 500;                         % Scene limit (half side or radius depending on observation model)
 Par.Vmax = 10;                          % Maximum velocity
@@ -32,7 +35,7 @@ end
 %%% Scenario parameters                                                 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.NumTgts = 5;
+Par.NumTgts = 3;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Target dynamic model parameters                                     %%%
@@ -44,6 +47,8 @@ Par.B = [P^2/2*eye(2); P*eye(2)];                                          % 2D 
 Par.Q = Par.ProcNoiseVar * ...
     [P^3/3 0 P^2/2 0; 0 P^3/3 0 P^2/2; P^2/2 0 P 0; 0 P^2/2 0 P];          % Gaussian motion covariance matrix (discretised continous random model)
 %     [P^4/4 0 P^3/2 0; 0 P^4/4 0 P^3/2; P^3/2 0 P^2 0; 0 P^3/2 0 P^2];      % Gaussian motion covariance matrix (piecewise constant acceleration discrete random model)
+Par.ExpBirth = 0.5;                                                        % Expected number of new targets in a frame (poisson deistributed)
+Par.PDeath = 0.1;                                                          % Probability of a (given) target death in a frame
 
 Par.Qchol = chol(Par.Q);                                                   % Cholesky decompostion of Par.Q
 
@@ -51,8 +56,8 @@ Par.Qchol = chol(Par.Q);                                                   % Cho
 %%% Observation model parameters                                        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.ExpClutObs = 160;%1000;%50;%            % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
-Par.PDetect = 0.75;                         % Probability of detecting a target in a given frame
+Par.ExpClutObs = 1000;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
+Par.PDetect = 0.9;                         % Probability of detecting a target in a given frame
 
 if Par.FLAG_ObsMod == 0
     Par.ObsNoiseVar = 1;                % Observation noise variance
@@ -70,6 +75,8 @@ end
 
 Par.L = 5;                              % Length of rolling window
 Par.NumPart = 500;                      % Number of particles
+
+Par.ResamThresh = 0.1;                  % Resampling threshold as a proportion of maximum
 
 Par.Vlimit = 2*Par.Vmax;                % Limit above which we do not accept velocity (lh=0)
 Par.KFInitVar = 1E-20;                  % Variance with which to initialise Kalman Filters (scaled identity matrix)
