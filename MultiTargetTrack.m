@@ -45,8 +45,8 @@ for t = 1:Par.T
     else
         [Distns{t}, ESS_post{t}, ESS_pre{t}, resamples, ObsTargIndexes, Area] = BatchSMC(t, Par.L, Distns{t-1}, Observs, ObsTargIndexes, Area);
     end
-
-    num_resamples = num_resamples + resamples;
+    
+%     num_resamples = num_resamples + resamples;
     
     assoc = [];
     for c = 1:Distns{t}.N
@@ -55,10 +55,10 @@ for t = 1:Par.T
         end
     end
     disp(['*** Particle ' num2str(round(Par.NumPart/2)) ' associations at t-L+1: ' num2str(assoc)]);
-
+    
     disp(['*** Frame ' num2str(t) ' processed in ' num2str(toc) ' seconds']);
     disp('**************************************************************');
-
+    
     if round(t/10)==t/10
         PlotTracks(Distns{t});
         pause(1);
@@ -97,6 +97,8 @@ for c = 1:Distn.N
     end
 end
 
+ProjectedPrevious = Distn.Copy;
+
 % Detect relevant observations
 [ObsTargIndexes{t}] = DetectNearbyObservations(t, Observs, Distn);%, Area{t}
 disp(['*** ' num2str(cellfun(@length, ObsTargIndexes{t})') ' observations in respective target vicinities']);
@@ -107,77 +109,94 @@ disp(['*** ' num2str(cellfun(@length, ObsTargIndexes{t})') ' observations in res
 curr_arr = zeros(Par.NumPart, 1);
 % prev_arr = zeros(Par.NumPart, 1);
 
-% Loop through clusters
-for c = 1:length(Distn.clusters)
+% Collision detection loop
+clusters_done = false(Distn.N, 1);
+while ~all(clusters_done)
     
-    weights = zeros(Par.NumPart, 1);
-    
-    % Loop through particles
-    for ii = 1:Par.NumPart
+    % Loop through clusters
+    for c = find(~clusters_done)'
         
-        Cluster = Distn.clusters{c}.particles{ii};
+        weights = zeros(Par.NumPart, 1);
         
-%         prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
-%         prev_jah_ppsl = Cluster.SampleAssociations(t-1, L-1, Observs, true);
-%         prev_state_ppsl = Cluster.SampleStates(t-1, L-1, Observs, true);
-
-        Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
-
-        % Sample and update associations
-        jah_ppsl = Cluster.SampleAssociations(t, L, Observs, Cluster_OTI, false);
-    
-        % Sample and update states
-        state_ppsl = Cluster.SampleStates(t, L, Observs, false);
-        
-        % Calculate new posterior
-        post_prob = Posterior(t, L, Cluster, Observs, Cluster_OTI);%, Area
-    
-        % Update the weight
-        weights(ii) = Distn.clusters{c}.weights(ii) ...
-                   + (post_prob - sum(state_ppsl) - jah_ppsl);%...
-%                    - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
-               
-        curr_arr(ii) = (post_prob - sum(state_ppsl) - jah_ppsl);
-%         prev_arr(ii) = (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
-               
-%         post_prob_array(ii) = post_prob;
-%         state_ppsl_array(ii) = sum(state_ppsl(:));
-%         jah_ppsl_array(ii) = jah_ppsl;
-        
-        if isnan(weights(ii))
-            weights(ii) = -inf;
+        % Loop through particles
+        for ii = 1:Par.NumPart
+            
+            Cluster = Distn.clusters{c}.particles{ii};
+            
+            %         prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
+            %         prev_jah_ppsl = Cluster.SampleAssociations(t-1, L-1, Observs, true);
+            %         prev_state_ppsl = Cluster.SampleStates(t-1, L-1, Observs, true);
+            
+            Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
+            
+            % Sample and update associations
+            jah_ppsl = Cluster.SampleAssociations(t, L, Observs, Cluster_OTI, false);
+            
+            % Sample and update states
+            state_ppsl = Cluster.SampleStates(t, L, Observs, false);
+            
+            % Calculate new posterior
+            post_prob = Posterior(t, L, Cluster, Observs, Cluster_OTI);%, Area
+            
+            % Update the weight
+            weights(ii) = Distn.clusters{c}.weights(ii) ...
+                + (post_prob - sum(state_ppsl) - jah_ppsl);%...
+            %                    - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+            
+            curr_arr(ii) = (post_prob - sum(state_ppsl) - jah_ppsl);
+            %         prev_arr(ii) = (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+            
+            %         post_prob_array(ii) = post_prob;
+            %         state_ppsl_array(ii) = sum(state_ppsl(:));
+            %         jah_ppsl_array(ii) = jah_ppsl;
+            
+            if isnan(weights(ii))
+                weights(ii) = -inf;
+            end
+            
+            if isinf(weights(ii))
+                disp(['Uh-oh: Zero weight in cluster ' num2str(c) ', particle ' num2str(ii)]);
+            end
+            
         end
         
-        if isinf(weights(ii))
-            disp(['Uh-oh: Zero weight in cluster ' num2str(c) ', particle ' num2str(ii)]);
+        assert(~all(isinf(weights)), 'All weights are zero');
+        
+        % Normalise weights
+        max_weight = max(weights); max_weight = max_weight(1); weights = weights - max_weight;
+        weights = exp(weights); weights = weights/sum(weights);  weights = log(weights);
+        
+        % Attach weights to particles
+        Distn.clusters{c}.weights = weights;
+        
+        % Calculate effective sample size for diagnostics
+        ESS_pre(c) = CalcESS(weights);
+        assert(~isnan(ESS_pre(c)), 'Effective Sample Size is non defined (probably all weights negligible)');
+        
+        if (ESS_pre(c) < Par.ResamThresh*Par.NumPart)
+            [Distn.clusters{c}, weights] = ConservativeResample(Distn.clusters{c}, weights);
+            resamples(c) = resamples(c) + 1;
+            ESS_post(c) = CalcESS(weights);
+            disp(['*** Target Cluster' num2str(c) ': Effective Sample Size = ' num2str(ESS_pre(c)) '. RESAMPLED (Conservative). ESS = ' num2str(ESS_post(c))]);
+        else
+            disp(['*** Target Cluster' num2str(c) ': Effective Sample Size = ' num2str(ESS_pre(c))]);
+            ESS_post(c) = ESS_pre(c);
         end
         
     end
     
-    assert(~all(isinf(weights)), 'All weights are zero');
+    % Detect Collisions
+    [clusters_done, new_groups, new_groups_ind] = DetectCollisions(t, L, Distn);
     
-    % Normalise weights
-    max_weight = max(weights); max_weight = max_weight(1); weights = weights - max_weight;
-    weights = exp(weights); weights = weights/sum(weights);  weights = log(weights);
-    
-    % Attach weights to particles
-    Distn.clusters{c}.weights = weights;
-    
-    % Calculate effective sample size for diagnostics
-    ESS_pre(c) = CalcESS(weights);
-    assert(~isnan(ESS_pre(c)), 'Effective Sample Size is non defined (probably all weights negligible)');
-    
-    if (ESS_pre(c) < Par.ResamThresh*Par.NumPart)
-        [Distn.clusters{c}, weights] = ConservativeResample(Distn.clusters{c}, weights);
-        resamples(c) = resamples(c) + 1;
-        ESS_post(c) = CalcESS(weights);
-        disp(['*** Target Cluster' num2str(c) ': Effective Sample Size = ' num2str(ESS_pre(c)) '. RESAMPLED (Conservative). ESS = ' num2str(ESS_post(c))]);
-    else
-        disp(['*** Target Cluster' num2str(c) ': Effective Sample Size = ' num2str(ESS_pre(c))]);
-        ESS_post(c) = ESS_pre(c);
+%     clusters_done = true;
+    if ~all(clusters_done)
+        [Distn, clusters_done] = JoinClusters(Distn, ProjectedPrevious, new_groups, new_groups_ind);
     end
     
 end
+
+% % Detect Separations
+% Distn = SeparateClusters(Distn);
 
 end
 

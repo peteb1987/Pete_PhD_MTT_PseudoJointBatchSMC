@@ -47,9 +47,9 @@ end
 
 TargSpec(1).state = [-100, 100, 3, 0]';
 TargSpec(2).state = [-100, 90, 3, 0]';
-TargSpec(3).state = [-100, 80, 3, 0]';
-TargSpec(4).state = [-100, 110, 3, 0]';
-TargSpec(5).state = [-100, 120, 3, 0]';
+TargSpec(3).state = [100, 80, 3, 0]';
+% TargSpec(4).state = [-100, 110, 3, 0]';
+% TargSpec(5).state = [-100, 120, 3, 0]';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% End of manual overwrites                                            %%%
