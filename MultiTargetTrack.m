@@ -127,7 +127,8 @@ while ~all(clusters_done)
             %         prev_jah_ppsl = Cluster.SampleAssociations(t-1, L-1, Observs, true);
             %         prev_state_ppsl = Cluster.SampleStates(t-1, L-1, Observs, true);
             
-            Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
+%             Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
+            Cluster_OTI = cellfun(@(x) x(1), ObsTargIndexes(1:t));
             
             % Sample and update associations
             jah_ppsl = Cluster.SampleAssociations(t, L, Observs, Cluster_OTI, false);

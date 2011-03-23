@@ -3,7 +3,11 @@
 global Par;
 
 % Set random seed
-Par.rand_seed = 5;
+Par.rand_seed = 0;
+
+% 0, with 5 targets, T=50, is standard test
+% 5, with 2 targets, T=20, set next to each other is track-coallescing test
+% 2, with 5 targets, T=50, is challenging (tgt 1 turns a sharp corner with no detections
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Flags                                                               %%%
@@ -15,7 +19,7 @@ Par.FLAG_ObsMod = 1;        % 0 = cartesian, 1 = polar,
 %%% Scene parameters                                                    %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.T = 20;                             % Number of frames
+Par.T = 50;                             % Number of frames
 Par.P = 1; P = Par.P;                   % Sampling period
 Par.Xmax = 500;                         % Scene limit (half side or radius depending on observation model)
 Par.Vmax = 10;                          % Maximum velocity
@@ -35,7 +39,7 @@ end
 %%% Scenario parameters                                                 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.NumTgts = 2;
+Par.NumTgts = 5;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Target dynamic model parameters                                     %%%
@@ -57,7 +61,7 @@ Par.Qchol = chol(Par.Q);                                                   % Cho
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Par.ExpClutObs = 1000;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
-Par.PDetect = 0.9;                         % Probability of detecting a target in a given frame
+Par.PDetect = 0.75;                         % Probability of detecting a target in a given frame
 
 if Par.FLAG_ObsMod == 0
     Par.ObsNoiseVar = 1;                % Observation noise variance
