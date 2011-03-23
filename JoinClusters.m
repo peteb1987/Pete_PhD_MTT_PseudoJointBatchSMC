@@ -37,6 +37,7 @@ for c_new = 1:length(new_groups)
     end
     
     NewCluster = TrackGroupDistn(members, particles);
+    NewCluster.locked = Par.L;
     Distn.clusters = [Distn.clusters; {NewCluster}];
     Distn.N = Distn.N + 1;
     clusters_done = [clusters_done; false];

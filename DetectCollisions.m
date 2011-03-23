@@ -3,8 +3,6 @@ function [clusters_done, new_groups, new_groups_ind] = DetectCollisions( t, L, D
 % are currently being tracked independently (IPPF-style) are associated
 % with the same observation.
 
-global Par;
-
 clusters_done = true(Distn.N, 1);
 
 % Work out current group structure
@@ -47,9 +45,15 @@ for tt = t-L+1:t
                     % Check to see if there is already a new cluster with one of these clusters in
                     placed = false;
                     for g = 1:length(new_groups)
-                        if ~any(new_groups_ind{g}==new_cluster_ind)
-                                new_groups{g} = unique([new_groups{g}; new_cluster]);
-                                new_groups_ind{g} = [new_groups_ind{g}; c];
+                        if all(new_groups_ind{g}==new_cluster_ind)
+                            % Group already exists
+                            placed = true;
+                        end
+                        
+                        if ~isempty(intersect(new_groups_ind{g}, new_cluster_ind))&&~placed
+                            % Groups overlaps with another
+                            new_groups{g} = unique([new_groups{g}; new_cluster]);
+                            new_groups_ind{g} = unique([new_groups_ind{g}; c]);
                             placed = true;
                         end
                     end

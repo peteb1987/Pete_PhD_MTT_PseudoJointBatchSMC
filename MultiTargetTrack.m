@@ -185,6 +185,8 @@ while ~all(clusters_done)
         
     end
     
+%     clusters_done = true;
+    
     % Detect Collisions
     [clusters_done, new_groups, new_groups_ind] = DetectCollisions(t, L, Distn);
     
@@ -195,8 +197,8 @@ while ~all(clusters_done)
     
 end
 
-% % Detect Separations
-% Distn = SeparateClusters(Distn);
+% Detect Separations
+Distn = SeparateClusters(t, L, Distn);
 
 end
 
