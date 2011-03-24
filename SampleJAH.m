@@ -35,20 +35,37 @@ for j = order
         
         % Calculate deterministic prediction and jacobian
         p_x = (A^k) * x;
-        [p_bng, p_rng] = cart2pol(p_x(1), p_x(2));
-        p_rngsq = p_rng^2;
-        J = [-p_x(2)/p_rngsq, p_x(1)/p_rngsq, 0, 0; p_x(1)/p_rng, p_x(2)/p_rng, 0, 0];
+        if Par.FLAG_ObsMod == 0
+            C = [1 0 0 0; 0 1 0 0];
+        elseif Par.FLAG_ObsMod == 1
+            [p_bng, p_rng] = cart2pol(p_x(1), p_x(2));
+            p_rngsq = p_rng^2;
+            J = [-p_x(2)/p_rngsq, p_x(1)/p_rngsq, 0, 0; p_x(1)/p_rng, p_x(2)/p_rng, 0, 0];
+        end
         
         % Calculate the mean and variance
-        if d>L
-            mu = [p_bng; p_rng];
-            S = R + k*J*(k*Q)*J';
-        else
-            nV = (R+next_J*(d*Q)*next_J');
-            invSig = J'*(R\J) + ((A^d)'*next_J'/nV)*next_J*(A^d) + invQ/k;
-            invS = invR - ((R\J)/invSig)*J'/R;
-            S = inv(invS);
-            mu = [p_bng; p_rng] - J*p_x + invS \ ( (((R\J)*(invSig\(A^d)')*next_J'/nV)*(next_y-next_p_pol+next_J*next_p_x)) + (((R\(J/invSig))/(k*Q))*(A^k)*x) );
+        if Par.FLAG_ObsMod == 0
+            if d>L
+                mu = C*p_x;
+                S = R + C*(k*Q)*C';
+            else
+                nV = R+C*(d*Q)*C';
+                invSig = C'*(R\C) + ((A^d)'*C'/nV)*C*(A^d) + invQ/k;
+                invS = invR - ((R\C)/invSig)*C'/R;
+                S = inv(invS);
+                mu = invS \ ( (((R\C)*(invSig\(A^d)')*C'/nV)*next_y) + (((R\(C/invSig))/(k*Q))*(A^k)*x) );
+            end
+        elseif Par.FLAG_ObsMod == 1
+            if d>L
+                mu = [p_bng; p_rng];
+                S = R + J*(k*Q)*J';
+            else
+                nV = (R+next_J*(d*Q)*next_J');
+                invSig = J'*(R\J) + ((A^d)'*next_J'/nV)*next_J*(A^d) + invQ/k;
+                invS = invR - ((R\J)/invSig)*J'/R;
+                S = inv(invS);
+                mu = [p_bng; p_rng] - J*p_x + invS \ ( (((R\J)*(invSig\(A^d)')*next_J'/nV)*(next_y-next_p_pol+next_J*next_p_x)) + (((R\(J/invSig))/(k*Q))*(A^k)*x) );
+            end
         end
         
         S = (S+S')/2;
@@ -61,8 +78,10 @@ for j = order
         % the bottleneck of the whole program)
         ind = Cluster_OTI{tt};
         innov = bsxfun(@minus, Observs(tt).r(ind,:), mu')';
-        wrap_around1 = innov(1,:)>pi; innov(1, wrap_around1) = innov(1, wrap_around1) - 2*pi;
-        wrap_around2 = innov(1,:)<-pi; innov(1, wrap_around2) = innov(1, wrap_around2) + 2*pi;
+        if Par.FLAG_ObsMod == 1
+            wrap_around1 = innov(1,:)>pi; innov(1, wrap_around1) = innov(1, wrap_around1) - 2*pi;
+            wrap_around2 = innov(1,:)<-pi; innov(1, wrap_around2) = innov(1, wrap_around2) + 2*pi;
+        end
         test1 = abs(innov(1, :)) < thresh1;
         test2 = abs(innov(2, :)) < thresh2;
         indexes = find(test1&test2);
@@ -122,10 +141,14 @@ for j = order
             d=d+1;
         else
             next_y = Observs(tt).r(ass, :)';
-            next_p_pol = [p_bng; p_rng];
-            next_p_x = p_x;
-            next_J = J;
             d=1;
+            if Par.FLAG_ObsMod == 0
+                
+            elseif Par.FLAG_ObsMod == 1
+                next_p_pol = [p_bng; p_rng];
+                next_p_x = p_x;
+                next_J = J;
+            end
         end
                 
     end

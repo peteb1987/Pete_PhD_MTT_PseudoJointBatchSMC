@@ -26,16 +26,16 @@ for j = 1:N
     [~]=unidrnd(T);
     num = TargSpec(j).death - TargSpec(j).birth;
     TargSpec(j).state = zeros(4, 1);
-    if Par.FLAG_ObsMod == 0
-        TargSpec(j).state(1) = unifrnd(-0.5*Par.Xmax, 0.5*Par.Xmax);
-        TargSpec(j).state(2) = unifrnd(-0.5*Par.Xmax, 0.5*Par.Xmax);
-    elseif Par.FLAG_ObsMod == 1
+%     if Par.FLAG_ObsMod == 0
+%         TargSpec(j).state(1) = unifrnd(-0.5*Par.Xmax, 0.5*Par.Xmax);
+%         TargSpec(j).state(2) = unifrnd(-0.5*Par.Xmax, 0.5*Par.Xmax);
+%     elseif Par.FLAG_ObsMod == 1
       rng = unifrnd(0.15*Par.Xmax, 0.25*Par.Xmax);
 %         rng = unifrnd(0.10*Par.Xmax, 0.50*Par.Xmax);
         bng = unifrnd(-pi, pi);
         TargSpec(j).state(1) = rng*cos(bng);
         TargSpec(j).state(2) = rng*sin(bng);
-    end
+%     end
     TargSpec(j).state(3) = unifrnd(-Par.Vmax, Par.Vmax);
     TargSpec(j).state(4) = unifrnd(-Par.Vmax, Par.Vmax);
     TargSpec(j).acc = zeros(num, 2);
