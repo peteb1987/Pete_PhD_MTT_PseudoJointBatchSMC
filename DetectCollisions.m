@@ -1,7 +1,9 @@
-function [clusters_done, new_groups, new_groups_ind] = DetectCollisions( t, L, Distn )
+function [clusters_done, new_groups, new_groups_ind, all_ass_used] = DetectCollisions( t, L, Distn )
 %DETECTCOLLISIONS Detect target "collisions", i.e. where two targets which
 % are currently being tracked independently (IPPF-style) are associated
 % with the same observation.
+
+all_ass_used = cell(1, L);
 
 clusters_done = true(Distn.N, 1);
 
@@ -11,11 +13,11 @@ new_groups = cell(0,1);
 new_groups_ind  = cell(0,1);
 
 % Loop through time
-for tt = t-L+1:t-1
+for tt = t-L+1:t
     
     k = tt - (t-L);
     
-    ass_used = cell(Distn.N, 1);
+    ass_used = cell(1, Distn.N);
     
     % Loop through clusters
     for c = 1:Distn.N
@@ -23,7 +25,7 @@ for tt = t-L+1:t-1
         
         % Loop through targets and fetch association for each particle
         for j = 1:Distn.clusters{c}.N
-            ass =  [ass; cellfun(@(x) x.tracks{j}.GetAssoc(tt), Distn.clusters{c}.particles)];
+            ass =  [ass, cellfun(@(x) x.tracks{j}.GetAssoc(tt), Distn.clusters{c}.particles)'];
         end
         
         % List unique, non-zero associations
@@ -69,6 +71,9 @@ for tt = t-L+1:t-1
         end
 
     end
+    
+    all_ass_used{k} = unique(cell2mat(ass_used));
+    
 end
 
 end

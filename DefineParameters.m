@@ -14,13 +14,14 @@ Par.rand_seed = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Par.FLAG_ObsMod = 0;            % 0 = cartesian, 1 = polar,
-Par.FLAG_PseudoJoint = true;   % Use joint tracking for colliding targets
+Par.FLAG_PseudoJoint = true;    % Use joint tracking for colliding targets
+Par.FLAG_DyingTargs = false;    % Targets die at random
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Scene parameters                                                    %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.T = 20;                             % Number of frames
+Par.T = 50;                             % Number of frames
 Par.P = 1; P = Par.P;                   % Sampling period
 Par.Xmax = 500;                         % Scene limit (half side or radius depending on observation model)
 Par.Vmax = 10;                          % Maximum velocity
@@ -61,7 +62,7 @@ Par.Qchol = chol(Par.Q);                                                   % Cho
 %%% Observation model parameters                                        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.ExpClutObs = 100;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
+Par.ExpClutObs = 1000;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
 Par.PDetect = 0.75;                         % Probability of detecting a target in a given frame
 
 if Par.FLAG_ObsMod == 0
@@ -82,15 +83,14 @@ Par.L = 5;                              % Length of rolling window
 Par.NumPart = 500;                      % Number of particles
 
 Par.PRemove = 0.05;                     % Probability of removing target in a given particle
-Par.PReplace = 0.9;                     % Probability of putting a target back
+Par.BirthWindow = 4;                    % Join-the-dot length for target births
 
 Par.ResamThresh = 0.1;                  % Resampling threshold as a proportion of maximum
+Par.ResampleLowWeightThresh = 30;       % Orders of magnitude below max for particle killing
 
-Par.Vlimit = 1.5*Par.Vmax;                % Limit above which we do not accept velocity (lh=0)
+Par.Vlimit = 1.5*Par.Vmax;              % Limit above which we do not accept velocity (lh=0)
 Par.KFInitVar = 1E-20;                  % Variance with which to initialise Kalman Filters (scaled identity matrix)
 
-if Par.FLAG_ObsMod == 0
-    Par.BirthExclusionRadius = 0;
-else
-    Par.BirthExclusionRadius = 100;
+if Par.FLAG_ObsMod == 1
+    Par.BirthExclusionRadius = 100;     % Radius within which targets cannot be born (clutter too dense)
 end

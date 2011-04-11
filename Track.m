@@ -19,7 +19,7 @@ classdef Track < handle
             obj.death = death;
             obj.num = death - birth;
             
-            assert(obj.num > 0, 'Track length is negative or zero');
+            assert(obj.num >= 0, 'Track length is negative');
             
             obj.state = state;
             obj.assoc = assoc;

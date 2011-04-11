@@ -87,6 +87,8 @@ for tt = t-L+1:t        %start_time:end_time
             else
                 error('Invalid association');
             end
+        else
+            assoc(k) = assoc(k) + log(Par.ExpClutObs);
         end
     end
     

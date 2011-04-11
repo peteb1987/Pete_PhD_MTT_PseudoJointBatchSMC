@@ -37,7 +37,7 @@ interm_weight(interm_weight==0)=[];
 Nct = length(parent);
 
 % Get rid of low weights
-thresh = max(interm_weight) / exp(30);
+thresh = max(interm_weight) / exp(Par.ResampleLowWeightThresh);
 parent(interm_weight<thresh)=[];
 interm_weight(interm_weight<thresh)=[];
 Nct = length(parent);

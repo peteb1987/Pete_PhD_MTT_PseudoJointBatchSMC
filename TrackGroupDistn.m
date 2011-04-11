@@ -19,7 +19,7 @@ classdef TrackGroupDistn < handle
             
             if nargin == 2
                 N = length(particles);
-                obj.weights = ones(N, 1)/N;
+                obj.weights = log(ones(N, 1)/N);
             elseif nargin > 2
                 obj.weights = weights;
             else

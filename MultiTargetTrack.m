@@ -6,6 +6,7 @@ global Par;
 
 % Initialise particle array and diagnostics (an array of particle arrays)
 Distns = cell(Par.T, 1);
+SearchDistns = cell(Par.T, 1);
 ObsTargIndexes = cell(Par.T, 1);
 Area = cell(Par.T, 1);
 ESS_post = cell(Par.T, Par.NumTgts);
@@ -29,6 +30,10 @@ InitEst = MTDistn(init_track_distn);
 % init_track_distn = TrackGroupDistn(1:Par.NumTgts, repmat({TrackSet(1:Par.NumTgts, init_track)}, Par.NumPart, 1));
 % InitEst = MTDistn({init_track_distn});
 
+% Initialise search track
+search_track = Track(1, 1, [], []);
+search_track_set = TrackSet(0, {search_track});
+SearchTrack = TrackGroupDistn(0, repmat({search_track_set}, Par.NumPart, 1)); 
 
 % Loop through time
 for t = 1:Par.T
@@ -39,11 +44,11 @@ for t = 1:Par.T
     disp(['*** Now processing frame ' num2str(t)]);
     
     if t==1
-        [Distns{t}, ESS_post{t}, ESS_pre{t}, resamples, ObsTargIndexes, Area] = BatchSMC(t, t, InitEst, Observs, ObsTargIndexes, Area);
+        [Distns{t}, ESS_post{t}, ESS_pre{t}, resamples, ObsTargIndexes, SearchDistns{t}] = BatchSMC(t, t, InitEst, Observs, ObsTargIndexes, SearchTrack);
     elseif t<Par.L
-        [Distns{t}, ESS_post{t}, ESS_pre{t}, resamples, ObsTargIndexes, Area] = BatchSMC(t, t, Distns{t-1}, Observs, ObsTargIndexes, Area);
+        [Distns{t}, ESS_post{t}, ESS_pre{t}, resamples, ObsTargIndexes, SearchDistns{t}] = BatchSMC(t, t, Distns{t-1}, Observs, ObsTargIndexes, SearchDistns{t-1});
     else
-        [Distns{t}, ESS_post{t}, ESS_pre{t}, resamples, ObsTargIndexes, Area] = BatchSMC(t, Par.L, Distns{t-1}, Observs, ObsTargIndexes, Area);
+        [Distns{t}, ESS_post{t}, ESS_pre{t}, resamples, ObsTargIndexes, SearchDistns{t}] = BatchSMC(t, Par.L, Distns{t-1}, Observs, ObsTargIndexes, SearchDistns{t-1});
     end
     
 %     num_resamples = num_resamples + resamples;
@@ -59,7 +64,7 @@ for t = 1:Par.T
     disp(['*** Frame ' num2str(t) ' processed in ' num2str(toc) ' seconds']);
     disp('**************************************************************');
     
-    if mod(t, 1)==0
+    if mod(t, 100)==0
         PlotTracks(Distns{t});
 %         plot(Observs(t).r(:, 2).*cos(Observs(t).r(:, 1)), Observs(t).r(:, 2).*sin(Observs(t).r(:, 1)), 'x', 'color', [1,0.75,0.75]);
 %         saveas(gcf, ['Tracks' num2str(t) '.eps'], 'epsc2');
@@ -76,7 +81,7 @@ end
 
 
 
-function [Distn, ESS_post, ESS_pre, resamples, ObsTargIndexes, Area] = BatchSMC(t, L, Previous, Observs, ObsTargIndexes, Area)
+function [Distn, ESS_post, ESS_pre, resamples, ObsTargIndexes, SearchTrack] = BatchSMC(t, L, Previous, Observs, ObsTargIndexes, SearchTrackIn)
 % Execute a step of the SMC batch sampler
 
 % Runs an SMC on a batch of frames. We can alter states in t-L+1:t. Frame
@@ -90,12 +95,7 @@ resamples = zeros(Previous.N,1);
 
 % Initialise particle array and weight array
 Distn = Previous.Copy;
-
-% % TESTING
-% if t>2
-% tic;BirthSites = FindBirthSites( t, Observs );
-% disp(length(BirthSites));
-% end
+SearchTrack = SearchTrackIn.Copy;
 
 % Loop through clusters
 for c = 1:Distn.N
@@ -103,6 +103,7 @@ for c = 1:Distn.N
     for ii = 1:Par.NumPart
         % Project all tracks with an ML prediction
         Distn.clusters{c}.particles{ii}.ProjectTracks(t);
+        SearchTrack.particles{ii}.ProjectTracks(t);
     end
 end
 
@@ -190,16 +191,17 @@ while ~all(clusters_done)
             ESS_post(c) = CalcESS(weights);
             disp(['*** Target Cluster' num2str(c) ': Effective Sample Size = ' num2str(ESS_pre(c)) '. RESAMPLED (Conservative). ESS = ' num2str(ESS_post(c))]);
         else
+            [Distn.clusters{c}, weights] = LowWeightRemoval(Distn.clusters{c}, weights);
+            ESS_post(c) = CalcESS(weights);
             disp(['*** Target Cluster' num2str(c) ': Effective Sample Size = ' num2str(ESS_pre(c))]);
-            ESS_post(c) = ESS_pre(c);
         end
         
     end
     
+    % Detect Collisions
+    [clusters_done, new_groups, new_groups_ind, ass_used] = DetectCollisions(t, L, Distn);
+    
     if Par.FLAG_PseudoJoint
-        % Detect Collisions
-        [clusters_done, new_groups, new_groups_ind] = DetectCollisions(t, L, Distn);
-        
         if ~all(clusters_done)
             [Distn, clusters_done] = JoinClusters(Distn, ProjectedPrevious, new_groups, new_groups_ind);
         end
@@ -208,6 +210,20 @@ while ~all(clusters_done)
     end
     
 end
+
+% Detect potential new-target sites
+if t > Par.BirthWindow
+    BirthSites = FindBirthSites( t, L, Observs, ass_used );
+    disp(['*** Found ' num2str(length(BirthSites)) ' potential new-target sites in this frame']);
+end
+
+% Propose search track particles
+
+% calculate weights
+
+% resample
+
+% 
 
 if Par.FLAG_PseudoJoint
     % Detect Separations

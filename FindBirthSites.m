@@ -1,10 +1,11 @@
-function BirthSites = FindBirthSites( t, Observs )
+function BirthSites = FindBirthSites( t, L, Observs, ass_used )
 %FINDBIRTHSITES Locate points where a target could have been born in this
 % frame.
 
 global Par;
 
-B = 5;
+B = Par.BirthWindow;
+
 BirthSites = cell(0,1);
 
 % Convert observations into cartesians
@@ -12,9 +13,20 @@ obs_x = cell(B, 1);
 obs_y = cell(B, 1);
 for k = 1:B
     tt = t-B+k;
-    [obs_x{k}, obs_y{k}] = pol2cart(Observs(tt).r(:,1), Observs(tt).r(:,2));
-    obs_x{k}(Observs(tt).r(:,2)<Par.BirthExclusionRadius) = inf;
-    obs_y{k}(Observs(tt).r(:,2)<Par.BirthExclusionRadius) = inf;
+    if Par.FLAG_ObsMod == 0
+        obs_x{k} = Observs(tt).r(:,1);
+        obs_y{k} = Observs(tt).r(:,2);
+    elseif Par.FLAG_ObsMod == 1
+        [obs_x{k}, obs_y{k}] = pol2cart(Observs(tt).r(:,1), Observs(tt).r(:,2));
+        obs_x{k}(Observs(tt).r(:,2)<Par.BirthExclusionRadius) = inf;
+        obs_y{k}(Observs(tt).r(:,2)<Par.BirthExclusionRadius) = inf;
+    end
+    
+    % Remove all observations already used in a track
+    k_L = tt - (t-L);
+    obs_x{k}(ass_used{k_L}) = inf;
+    obs_y{k}(ass_used{k_L}) = inf;
+    
 end
 
 % Loop backwards through time looking for in-range obersvation pairs

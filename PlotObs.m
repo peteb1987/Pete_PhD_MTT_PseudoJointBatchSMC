@@ -14,6 +14,10 @@ if Par.FLAG_ObsMod == 0
     for t = 1:T
         plot(Observs(t).r(:, 1), Observs(t).r(:, 2), 'xr');
     end
+    for t = 1:T
+        ind = hits(t, hits(t,:)~=0);
+        plot(Observs(t).r(ind, 1), Observs(t).r(ind, 2), 'xb');
+    end
     
 elseif Par.FLAG_ObsMod == 1
     

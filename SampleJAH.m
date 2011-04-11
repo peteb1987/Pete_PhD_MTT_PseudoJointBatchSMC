@@ -21,9 +21,18 @@ used_ass = cell(L,1);
 % Loop through targets
 for j = order
     
+    % Look for missed-detection associations
+    first_miss = 0;
+    for tt = t-L+1:t-1
+        if Set.tracks{j}.GetAssoc(tt) == 0
+            first_miss = tt;
+            break
+        end
+    end
+    
     % With some probability, end the track
-    if (rand < Par.PRemove) && (Set.tracks{j}.death == t+1)
-        Set.tracks{j}.EndTrack(t)
+    if (rand < Par.PRemove) && (Set.tracks{j}.death == t+1) && (first_miss > 0)
+        Set.tracks{j}.EndTrack(first_miss)
         jah_ppsl(j, L) = log(Par.PRemove);
     end
         
