@@ -32,7 +32,7 @@ PlotObs(Observs, detections);
 PlotTracks(Distns{Par.T}, fig);
 
 % Analyse associations
-[ass, count] = AnalyseAss( detections, Distns, Par.T);
+[ass, count, present] = AnalyseAss( detections, Distns, Par.T);
 % 
 % % Plot ESS
 % % figure, plot(ESS_post), ylim([0 Par.NumPart])

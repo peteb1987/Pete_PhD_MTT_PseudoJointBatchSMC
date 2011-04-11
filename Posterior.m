@@ -53,14 +53,14 @@ for j = 1:Set.N
         
     end
     
-    if end_time < t
+    if (Set.tracks{j}.death <= t) && (Set.tracks{j}.death > t-L)
         trans(j) = trans(j) + log(Par.PDeath);
     end
     
 end
 
 % Clutter and association terms
-for tt = t-L+1:t
+for tt = t-L+1:t        %start_time:end_time
     k = tt - (t-L);
     
     % Association prior
@@ -106,7 +106,7 @@ for tt = t-L+1:t
 %     end
 %     birth(k) = log(poisspdf(num_births, Par.ExpBirth));
     
-end
+end    
 
 if any(isinf(like))
     disp('Zero likelihood');

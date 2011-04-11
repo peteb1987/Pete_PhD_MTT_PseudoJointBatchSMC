@@ -13,13 +13,14 @@ Par.rand_seed = 0;
 %%% Flags                                                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.FLAG_ObsMod = 0;        % 0 = cartesian, 1 = polar,
+Par.FLAG_ObsMod = 0;            % 0 = cartesian, 1 = polar,
+Par.FLAG_PseudoJoint = true;   % Use joint tracking for colliding targets
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Scene parameters                                                    %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.T = 50;                             % Number of frames
+Par.T = 20;                             % Number of frames
 Par.P = 1; P = Par.P;                   % Sampling period
 Par.Xmax = 500;                         % Scene limit (half side or radius depending on observation model)
 Par.Vmax = 10;                          % Maximum velocity
@@ -52,7 +53,7 @@ Par.Q = Par.ProcNoiseVar * ...
     [P^3/3 0 P^2/2 0; 0 P^3/3 0 P^2/2; P^2/2 0 P 0; 0 P^2/2 0 P];          % Gaussian motion covariance matrix (discretised continous random model)
 %     [P^4/4 0 P^3/2 0; 0 P^4/4 0 P^3/2; P^3/2 0 P^2 0; 0 P^3/2 0 P^2];      % Gaussian motion covariance matrix (piecewise constant acceleration discrete random model)
 Par.ExpBirth = 0.5;                                                        % Expected number of new targets in a frame (poisson deistributed)
-Par.PDeath = 0.1;                                                          % Probability of a (given) target death in a frame
+Par.PDeath = 0.01;                                                          % Probability of a (given) target death in a frame
 
 Par.Qchol = chol(Par.Q);                                                   % Cholesky decompostion of Par.Q
 
@@ -60,7 +61,7 @@ Par.Qchol = chol(Par.Q);                                                   % Cho
 %%% Observation model parameters                                        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.ExpClutObs = 1000;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
+Par.ExpClutObs = 100;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
 Par.PDetect = 0.75;                         % Probability of detecting a target in a given frame
 
 if Par.FLAG_ObsMod == 0
@@ -80,7 +81,16 @@ end
 Par.L = 5;                              % Length of rolling window
 Par.NumPart = 500;                      % Number of particles
 
+Par.PRemove = 0.05;                     % Probability of removing target in a given particle
+Par.PReplace = 0.9;                     % Probability of putting a target back
+
 Par.ResamThresh = 0.1;                  % Resampling threshold as a proportion of maximum
 
-Par.Vlimit = 2*Par.Vmax;                % Limit above which we do not accept velocity (lh=0)
+Par.Vlimit = 1.5*Par.Vmax;                % Limit above which we do not accept velocity (lh=0)
 Par.KFInitVar = 1E-20;                  % Variance with which to initialise Kalman Filters (scaled identity matrix)
+
+if Par.FLAG_ObsMod == 0
+    Par.BirthExclusionRadius = 0;
+else
+    Par.BirthExclusionRadius = 100;
+end

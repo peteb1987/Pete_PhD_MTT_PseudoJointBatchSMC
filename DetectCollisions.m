@@ -11,7 +11,7 @@ new_groups = cell(0,1);
 new_groups_ind  = cell(0,1);
 
 % Loop through time
-for tt = t-L+1:t
+for tt = t-L+1:t-1
     
     k = tt - (t-L);
     
@@ -34,7 +34,7 @@ for tt = t-L+1:t
         for cc = 1:c-1
             for i = 1:length(ass_used{c})
                 if any(ass_used{c}(i)==ass_used{cc})
-                    disp(['Collision between ' num2str(cc) ' and ' num2str(c) ' at observation ' num2str(ass_used{c}(i))]);
+                    disp(['Collision between ' num2str(cc) ' and ' num2str(c) ' at observation ' num2str(ass_used{c}(i)) ' in frame ' num2str(tt)]);
                     clusters_done(c) = false;
                     clusters_done(cc) = false;
                     
@@ -45,15 +45,17 @@ for tt = t-L+1:t
                     % Check to see if there is already a new cluster with one of these clusters in
                     placed = false;
                     for g = 1:length(new_groups)
-                        if all(new_groups_ind{g}==new_cluster_ind)
-                            % Group already exists
-                            placed = true;
+                        if length(new_groups_ind{g})==length(new_cluster_ind)
+                            if all(new_groups_ind{g}==new_cluster_ind)
+                                % Group already exists
+                                placed = true;
+                            end
                         end
                         
                         if ~isempty(intersect(new_groups_ind{g}, new_cluster_ind))&&~placed
                             % Groups overlaps with another
                             new_groups{g} = unique([new_groups{g}; new_cluster]);
-                            new_groups_ind{g} = unique([new_groups_ind{g}; c]);
+                            new_groups_ind{g} = unique([new_groups_ind{g}; new_cluster_ind]);
                             placed = true;
                         end
                     end

@@ -25,18 +25,21 @@ for c_new = 1:length(new_groups)
     
     for c_old = new_groups_ind{c_new}'
         
-        % Resample the old distn so we can combine particles
-        OldCluster = SystematicResample(UnprocessedDistn.clusters{c_old}, UnprocessedDistn.clusters{c_old}.weights);
+%         % Resample the old distn so we can combine particles
+%         OldCluster = SystematicResample(UnprocessedDistn.clusters{c_old}, UnprocessedDistn.clusters{c_old}.weights);
+        OldCluster = UnprocessedDistn.clusters{c_old};
         
         if isempty(particles)
             particles = OldCluster.particles;
+            weights = UnprocessedDistn.clusters{c_old}.weights;
         else
             particles = JoinParticles(particles, OldCluster);
+            weights = weights + UnprocessedDistn.clusters{c_old}.weights;
         end
         
     end
     
-    NewCluster = TrackGroupDistn(members, particles);
+    NewCluster = TrackGroupDistn(members, particles, weights);
     NewCluster.locked = Par.L;
     Distn.clusters = [Distn.clusters; {NewCluster}];
     Distn.N = Distn.N + 1;

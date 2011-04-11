@@ -48,13 +48,14 @@ classdef Track < handle
         % Get Assoc
         function assoc = GetAssoc(obj, t)
 %             k = obj.Time(t);
-%             if (k<0)||(k>length(obj.assoc))
-%                 assoc = 0;
-%             else
-%                 assoc = obj.assoc(k);
-%             end
             k = t - obj.birth + 1;
-            assoc = obj.assoc(k);
+            if (k<0)||(k>length(obj.assoc))
+                assoc = 0;
+            else
+                assoc = obj.assoc(k);
+            end
+%             k = t - obj.birth + 1;
+%             assoc = obj.assoc(k);
         end
         
         
@@ -131,7 +132,7 @@ classdef Track < handle
             L = length(NewTrack);
             assert(isempty(assoc)||(length(assoc)==L), 'Association vector has incorrect length');
             
-            % Set state and association for t-L+1 to t-L
+            % Set state and association for t-L+1 to t-1
             for tt = t-L+1:t-1
                 k = tt-(t-L);
                 obj.SetState(tt, NewTrack{k})

@@ -59,8 +59,11 @@ for t = 1:Par.T
     disp(['*** Frame ' num2str(t) ' processed in ' num2str(toc) ' seconds']);
     disp('**************************************************************');
     
-    if round(t/10)==t/10
+    if mod(t, 1)==0
         PlotTracks(Distns{t});
+%         plot(Observs(t).r(:, 2).*cos(Observs(t).r(:, 1)), Observs(t).r(:, 2).*sin(Observs(t).r(:, 1)), 'x', 'color', [1,0.75,0.75]);
+%         saveas(gcf, ['Tracks' num2str(t) '.eps'], 'epsc2');
+%         close(gcf)
         pause(1);
     end
     
@@ -88,6 +91,12 @@ resamples = zeros(Previous.N,1);
 % Initialise particle array and weight array
 Distn = Previous.Copy;
 
+% % TESTING
+% if t>2
+% tic;BirthSites = FindBirthSites( t, Observs );
+% disp(length(BirthSites));
+% end
+
 % Loop through clusters
 for c = 1:Distn.N
     % Loop through particles
@@ -103,9 +112,9 @@ ProjectedPrevious = Distn.Copy;
 [ObsTargIndexes{t}] = DetectNearbyObservations(t, Observs, Distn);%, Area{t}
 disp(['*** ' num2str(cellfun(@length, ObsTargIndexes{t})') ' observations in respective target vicinities']);
 
-% post_prob_array = zeros(Par.NumPart, 1);
-% state_ppsl_array = zeros(Par.NumPart, 1);
-% jah_ppsl_array = zeros(Par.NumPart, 1);
+post_prob_array = zeros(Par.NumPart, 1);
+state_ppsl_array = zeros(Par.NumPart, 1);
+jah_ppsl_array = zeros(Par.NumPart, 1);
 curr_arr = zeros(Par.NumPart, 1);
 % prev_arr = zeros(Par.NumPart, 1);
 
@@ -123,9 +132,9 @@ while ~all(clusters_done)
             
             Cluster = Distn.clusters{c}.particles{ii};
             
-            %         prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
-            %         prev_jah_ppsl = Cluster.SampleAssociations(t-1, L-1, Observs, true);
-            %         prev_state_ppsl = Cluster.SampleStates(t-1, L-1, Observs, true);
+%             prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
+%             prev_jah_ppsl = Cluster.SampleAssociations(t-1, L-1, Observs, true);
+%             prev_state_ppsl = Cluster.SampleStates(t-1, L-1, Observs, true);
             
 %             Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
             Cluster_OTI = cellfun(@(x) x(1), ObsTargIndexes(1:t));
@@ -142,14 +151,14 @@ while ~all(clusters_done)
             % Update the weight
             weights(ii) = Distn.clusters{c}.weights(ii) ...
                 + (post_prob - sum(state_ppsl) - jah_ppsl);%...
-            %                    - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+%                    - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
             
             curr_arr(ii) = (post_prob - sum(state_ppsl) - jah_ppsl);
-            %         prev_arr(ii) = (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+%           prev_arr(ii) = (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
             
-            %         post_prob_array(ii) = post_prob;
-            %         state_ppsl_array(ii) = sum(state_ppsl(:));
-            %         jah_ppsl_array(ii) = jah_ppsl;
+            post_prob_array(ii) = post_prob;
+            state_ppsl_array(ii) = sum(state_ppsl(:));
+            jah_ppsl_array(ii) = jah_ppsl;
             
             if isnan(weights(ii))
                 weights(ii) = -inf;
@@ -176,6 +185,7 @@ while ~all(clusters_done)
         
         if (ESS_pre(c) < Par.ResamThresh*Par.NumPart)
             [Distn.clusters{c}, weights] = ConservativeResample(Distn.clusters{c}, weights);
+%             [Distn.clusters{c}] = SystematicResample(Distn.clusters{c}, weights);
             resamples(c) = resamples(c) + 1;
             ESS_post(c) = CalcESS(weights);
             disp(['*** Target Cluster' num2str(c) ': Effective Sample Size = ' num2str(ESS_pre(c)) '. RESAMPLED (Conservative). ESS = ' num2str(ESS_post(c))]);
@@ -186,20 +196,23 @@ while ~all(clusters_done)
         
     end
     
-%     clusters_done = true;
-    
-    % Detect Collisions
-    [clusters_done, new_groups, new_groups_ind] = DetectCollisions(t, L, Distn);
-    
-%     clusters_done = true;
-    if ~all(clusters_done)
-        [Distn, clusters_done] = JoinClusters(Distn, ProjectedPrevious, new_groups, new_groups_ind);
+    if Par.FLAG_PseudoJoint
+        % Detect Collisions
+        [clusters_done, new_groups, new_groups_ind] = DetectCollisions(t, L, Distn);
+        
+        if ~all(clusters_done)
+            [Distn, clusters_done] = JoinClusters(Distn, ProjectedPrevious, new_groups, new_groups_ind);
+        end
+    else
+        clusters_done = true;
     end
     
 end
 
-% Detect Separations
-Distn = SeparateClusters(t, L, Distn);
+if Par.FLAG_PseudoJoint
+    % Detect Separations
+    Distn = SeparateClusters(t, L, Distn);
+end
 
 end
 

@@ -24,6 +24,10 @@ elseif Par.FLAG_ObsMod == 1
         ind = hits(t, hits(t,:)~=0);
         plot(Observs(t).r(ind, 2).*cos(Observs(t).r(ind, 1)), Observs(t).r(ind, 2).*sin(Observs(t).r(ind, 1)), 'xb');
     end
+    for t = 1:T
+        ind = hits(t, hits(t,:)~=0);
+        plot(Observs(t).r(ind, 2).*cos(Observs(t).r(ind, 1)), Observs(t).r(ind, 2).*sin(Observs(t).r(ind, 1)), 'xb');
+    end
     
     figure, hold on
     xlim([-pi, pi]), ylim([0 Par.Xmax]);
