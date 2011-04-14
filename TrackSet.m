@@ -136,6 +136,16 @@ classdef TrackSet < handle
             
         end
         
+        
+        
+        %SampleSearchAssociations - As above, but for the search track
+        function ppsl_prob = SampleSearchAssociations(obj, t, L, Observs, Cluster_OTI, BirthSites )
+            
+            jah_ppsl = SampleSearchJAH(t, L, obj, Observs, Cluster_OTI, BirthSites);
+            ppsl_prob = sum(jah_ppsl(:));
+            
+        end
+        
     end
     
 end

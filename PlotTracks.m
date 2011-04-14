@@ -30,16 +30,20 @@ function PlotParticle(Part)
 % Loop through targets
 for j = 1:Part.N
     
-    % Choose a colour
-    col = [rand, rand, 0];
-    
-    % Collate state
-    state = cell2mat(Part.tracks{j}.state');
-    x = state(1, :);
-    y = state(2, :);
-    
-    % Plot track
-    plot(x, y, '-', 'color', col);
+    if Part.tracks{j}.num > 0
+        
+        % Choose a colour
+        col = [rand, rand, 0];
+        
+        % Collate state
+        state = cell2mat(Part.tracks{j}.state');
+        x = state(1, :);
+        y = state(2, :);
+        
+        % Plot track
+        plot(x, y, '-', 'color', col);
+        
+    end
     
 end
 

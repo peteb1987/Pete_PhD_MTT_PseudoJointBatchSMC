@@ -87,7 +87,7 @@ end
 % Sort sites and select most probable
 sort_arr = [score, cumsum(ones(length(score), 1))];
 sort_arr = sortrows(sort_arr, -1);
-BirthSites = BirthSites(sort_arr(1:100, 2));
+BirthSites = BirthSites(sort_arr(1:min(Par.NumBirthSites,length(BirthSites)), 2));
 
 end
 

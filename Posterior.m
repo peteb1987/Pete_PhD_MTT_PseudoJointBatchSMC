@@ -110,21 +110,21 @@ for tt = t-L+1:t        %start_time:end_time
     
 end    
 
-if any(isinf(like))
-    disp('Zero likelihood');
-end
-if any(isinf(trans))
-    disp('Zero transition density');
-end
-if any(isinf(clut))
-    disp('Zero clutter probability');
-end
-if any(isinf(assoc))
-    disp('Zero association probability');
-end
-if any(isinf(birth))
-    disp('Zero birth probability');
-end
+% if any(isinf(like))
+%     disp('Zero likelihood');
+% end
+% if any(isinf(trans))
+%     disp('Zero transition density');
+% end
+% if any(isinf(clut))
+%     disp('Zero clutter probability');
+% end
+% if any(isinf(assoc))
+%     disp('Zero association probability');
+% end
+% if any(isinf(birth))
+%     disp('Zero birth probability');
+% end
 
 % Combine likelihood and transition density terms
 post = sum(like) + sum(trans) + sum(clut) + sum(assoc) + sum(birth);

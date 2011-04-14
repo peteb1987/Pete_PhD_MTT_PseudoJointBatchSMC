@@ -5,10 +5,12 @@ function [ObsTargIndexes] = DetectNearbyObservations(t, Observs, Distn)
 
 %, Area
 
-ObsTargIndexes = cell(Distn.N, 1);
-for c = 1:Distn.N
-    ObsTargIndexes{c} = (1:Observs(t).N)';
-end
+ObsTargIndexes = {(1:Observs(t).N)'};
+
+% ObsTargIndexes = cell(Distn.N, 1);
+% for c = 1:Distn.N
+%     ObsTargIndexes{c} = (1:Observs(t).N)';
+% end
 
 % global Par;
 % 

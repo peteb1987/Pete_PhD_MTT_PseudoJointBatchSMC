@@ -83,7 +83,9 @@ Par.L = 5;                              % Length of rolling window
 Par.NumPart = 500;                      % Number of particles
 
 Par.PRemove = 0.05;                     % Probability of removing target in a given particle
-Par.BirthWindow = 4;                    % Join-the-dot length for target births
+Par.BirthWindow = 5;                    % Join-the-dot length for target births
+Par.NumBirthSites = 100;                % Number of birth sites on the shortlist in each frame
+Par.SearchPromoteThresh = 0.99;         % Proportion of particles above which the search track is promoted
 
 Par.ResamThresh = 0.1;                  % Resampling threshold as a proportion of maximum
 Par.ResampleLowWeightThresh = 30;       % Orders of magnitude below max for particle killing

@@ -13,14 +13,18 @@ ESS_post = cell(Par.T, Par.NumTgts);
 ESS_pre = cell(Par.T, Par.NumTgts);
 num_resamples = zeros(Par.NumTgts, 1);
 
-% Initialise particle set - separate
-init_track = cell(Par.NumTgts, 1);
-init_track_distn = cell(Par.NumTgts, 1);
-for j = 1:Par.NumTgts
-    init_track{j} = Track(0, 1, {InitState{j}-[InitState{j}(3:4)' 0 0]'}, 0);
-    init_track_distn{j} = TrackGroupDistn(j, repmat({TrackSet(j, init_track(j))}, Par.NumPart, 1));
-end
+% Initialise particle set - no targets
+init_track_distn = cell(0, 1);
 InitEst = MTDistn(init_track_distn);
+
+% % Initialise particle set - separate
+% init_track = cell(Par.NumTgts, 1);
+% init_track_distn = cell(Par.NumTgts, 1);
+% for j = 1:Par.NumTgts
+%     init_track{j} = Track(0, 1, {InitState{j}-[InitState{j}(3:4)' 0 0]'}, 0);
+%     init_track_distn{j} = TrackGroupDistn(j, repmat({TrackSet(j, init_track(j))}, Par.NumPart, 1));
+% end
+% InitEst = MTDistn(init_track_distn);
 
 % % Initialise particle set - together
 % init_track = cell(Par.NumTgts, 1);
@@ -31,7 +35,7 @@ InitEst = MTDistn(init_track_distn);
 % InitEst = MTDistn({init_track_distn});
 
 % Initialise search track
-search_track = Track(1, 1, [], []);
+search_track = Track(0, 0, [], []);
 search_track_set = TrackSet(0, {search_track});
 SearchTrack = TrackGroupDistn(0, repmat({search_track_set}, Par.NumPart, 1)); 
 
@@ -103,15 +107,15 @@ for c = 1:Distn.N
     for ii = 1:Par.NumPart
         % Project all tracks with an ML prediction
         Distn.clusters{c}.particles{ii}.ProjectTracks(t);
-        SearchTrack.particles{ii}.ProjectTracks(t);
     end
 end
 
 ProjectedPrevious = Distn.Copy;
 
-% Detect relevant observations
+% Detect relevant observations - NOT USED. FUDGED REMOVAL
 [ObsTargIndexes{t}] = DetectNearbyObservations(t, Observs, Distn);%, Area{t}
-disp(['*** ' num2str(cellfun(@length, ObsTargIndexes{t})') ' observations in respective target vicinities']);
+% disp(['*** ' num2str(cellfun(@length, ObsTargIndexes{t})') ' observations in respective target vicinities']);
+Cluster_OTI = cellfun(@(x) x(1), ObsTargIndexes(1:t));
 
 post_prob_array = zeros(Par.NumPart, 1);
 state_ppsl_array = zeros(Par.NumPart, 1);
@@ -121,6 +125,7 @@ curr_arr = zeros(Par.NumPart, 1);
 
 % Collision detection loop
 clusters_done = false(Distn.N, 1);
+ass_used = cell(1,L);
 while ~all(clusters_done)
     
     % Loop through clusters
@@ -138,7 +143,6 @@ while ~all(clusters_done)
 %             prev_state_ppsl = Cluster.SampleStates(t-1, L-1, Observs, true);
             
 %             Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
-            Cluster_OTI = cellfun(@(x) x(1), ObsTargIndexes(1:t));
             
             % Sample and update associations
             jah_ppsl = Cluster.SampleAssociations(t, L, Observs, Cluster_OTI, false);
@@ -211,19 +215,104 @@ while ~all(clusters_done)
     
 end
 
-% Detect potential new-target sites
+% Search track processing
 if t > Par.BirthWindow
+    
+    % Find birth sites
     BirthSites = FindBirthSites( t, L, Observs, ass_used );
-    disp(['*** Found ' num2str(length(BirthSites)) ' potential new-target sites in this frame']);
+    
+    if size(BirthSites, 1) > 0
+        
+        weights = zeros(Par.NumPart, 1);
+        
+        post_prob_array = zeros(Par.NumPart, 1);
+        state_ppsl_array = zeros(Par.NumPart, 1);
+        assoc_ppsl_array = zeros(Par.NumPart, 1);
+        
+        % Loop through search track particles
+        for ii = 1:Par.NumPart
+            
+            SearchTrack.particles{ii}.ProjectTracks(t);
+            
+            % Propose associations
+            assoc_ppsl = SearchTrack.particles{ii}.SampleSearchAssociations(t, L, Observs, Cluster_OTI, BirthSites );
+            
+            % Propse state
+            state_ppsl = SearchTrack.particles{ii}.SampleStates(t, L, Observs, false);
+            
+            % Calculate new posterior
+            post_prob = Posterior(t, L, SearchTrack.particles{ii}, Observs, Cluster_OTI);
+            
+            % Birth term
+            if SearchTrack.particles{ii}.tracks{1}.birth > (t-L)
+                birth_prob = log(poisspdf(1, Par.ExpBirth));
+            else
+                birth_prob = log(poisspdf(0, Par.ExpBirth));
+            end
+            
+            % Update the weight
+            weights(ii) = (post_prob + birth_prob - sum(state_ppsl) - assoc_ppsl);
+            
+            post_prob_array(ii) = post_prob;
+            state_ppsl_array(ii) = sum(state_ppsl(:));
+            assoc_ppsl_array(ii) = assoc_ppsl;
+            
+            if isnan(weights(ii))
+                weights(ii) = -inf;
+            end
+            
+            if isinf(weights(ii))
+                disp(['Uh-oh: Zero weight in search track, particle ' num2str(ii)]);
+            end
+            
+        end
+        
+        % Normalise weights
+        max_weight = max(weights); max_weight = max_weight(1); weights = weights - max_weight;
+        weights = exp(weights); weights = weights/sum(weights);  weights = log(weights);
+        
+        %     % Attach weights to particles
+        %     SearchTrack.weights = weights;
+        
+        % Resample
+%         PlotTracks( MTDistn({SearchTrack}) )
+        SearchTrack = SystematicResample(SearchTrack, weights);
+%         PlotTracks( MTDistn({SearchTrack}) )
+        
+        origins=zeros(Par.NumPart,1); for ii=1:Par.NumPart, origins(ii)=SearchTrack.particles{ii}.members; end
+        most_common = mode(origins);
+        proportion = sum(most_common==origins)/Par.NumPart;
+        disp(['*** Most promising birth site has ' num2str(100*proportion) '% of the particles: ' num2str(most_common)]);
+        
+        % Promote search track if it has enough of the particles
+        if (most_common ~= 0) && (proportion > Par.SearchPromoteThresh)
+            
+            % Count tracks already present
+            id = 1;
+            for c = 1:Distn.N
+                for j = 1:Distn.clusters{c}.N
+                    id = id + 1;
+                end
+            end
+            
+            SearchTrack.members = id;
+            for ii = 1:Par.NumPart
+                SearchTrack.particles{ii}.members = id;
+            end
+            
+            Distn.clusters = [Distn.clusters; {SearchTrack}];
+            Distn.N = Distn.N + 1;
+            
+            % Reinitialise search track
+            search_track = Track(0, 0, [], []);
+            search_track_set = TrackSet(0, {search_track});
+            SearchTrack = TrackGroupDistn(0, repmat({search_track_set}, Par.NumPart, 1));
+            
+        end
+        
+    end
+    
 end
-
-% Propose search track particles
-
-% calculate weights
-
-% resample
-
-% 
 
 if Par.FLAG_PseudoJoint
     % Detect Separations

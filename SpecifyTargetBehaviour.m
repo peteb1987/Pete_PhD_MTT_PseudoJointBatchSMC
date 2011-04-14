@@ -50,6 +50,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % TargSpec(1).death = 11;
+% TargSpec(1).birth = 5;
+% TargSpec(2).birth = 20;
+% TargSpec(3).birth = 35;
 
 % TargSpec(1).state = [-100, 100, 3, 0]';
 % TargSpec(2).state = [-100, 90, 3, 0]';
