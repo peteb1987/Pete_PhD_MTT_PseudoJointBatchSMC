@@ -26,7 +26,7 @@ fig = PlotTrueState(TrueState);
 PlotObs(Observs, detections);
 
 % Run tracker
-[ Distns, ObsTargIndexes, ESS_post, ESS_pre, num_resamples ] = MultiTargetTrack( Observs, {TargSpec(:).state} );
+[ Distns, ObsTargIndexes, ESS_post, ESS_pre, num_resamples ] = MultiTargetTrack(detections, Observs, {TargSpec(:).state} );
 
 % Plot final estimates
 PlotTracks(Distns{Par.T}, fig);

@@ -1,4 +1,4 @@
-function [ Distns, ObsTargIndexes, ESS_post, ESS_pre, num_resamples ] = MultiTargetTrack( Observs, InitState )
+function [ Distns, ObsTargIndexes, ESS_post, ESS_pre, num_resamples ] = MultiTargetTrack( detections, Observs, InitState )
 %MULTITARGETTRACK Runs a batch SMC tracking algorithm for multiple
 % targets with missed observations and clutter
 
@@ -66,10 +66,14 @@ for t = 1:Par.T
     assoc = [];
     for c = 1:Distns{t}.N
         for j = 1:Distns{t}.clusters{c}.N
-            assoc = [assoc, Distns{t}.clusters{c}.particles{round(Par.NumPart/2)}.tracks{j}.GetAssoc(t-min(t,Par.L)+1)];
+            get_ass = cellfun(@(x) x.tracks{j}.GetAssoc(t-min(t,Par.L)+1), Distns{t}.clusters{c}.particles);
+            mode_ass = mode(get_ass);
+            assoc = [assoc, mode_ass];
+%             assoc = [assoc, Distns{t}.clusters{c}.particles{round(Par.NumPart/2)}.tracks{j}.GetAssoc(t-min(t,Par.L)+1)];
         end
     end
-    disp(['*** Particle ' num2str(round(Par.NumPart/2)) ' associations at t-L+1: ' num2str(assoc)]);
+    disp(['*** Correct associations at frame ' num2str(t-min(t,Par.L)+1) ': ' num2str(detections(t-min(t,Par.L)+1,:))]);
+    disp(['*** Modal associations at frame ' num2str(t-min(t,Par.L)+1) ': ' num2str(assoc)]);
     
     disp(['*** Frame ' num2str(t) ' processed in ' num2str(toc) ' seconds']);
     disp('**************************************************************');
@@ -127,8 +131,9 @@ post_prob_array = zeros(Par.NumPart, 1);
 state_ppsl_array = zeros(Par.NumPart, 1);
 jah_ppsl_array = zeros(Par.NumPart, 1);
 curr_arr = zeros(Par.NumPart, 1);
-% prev_arr = zeros(Par.NumPart, 1);
+prev_arr = zeros(Par.NumPart, 1);
 % pred_like_arr = zeros(Par.NumPart, 1);
+d_arr = zeros(Par.NumPart, 1);
 
 % Collision detection loop
 clusters_done = false(Distn.N, 1);
@@ -146,13 +151,22 @@ while ~all(clusters_done)
             Cluster = Distn.clusters{c}.particles{ii};
             
 %             d = unidrnd(L);
-            d = L;
+%             d = L;
             
             prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
-            prev_jah_ppsl = Cluster.SampleAssociations(t-1, d-1, Observs, Cluster_OTI, true);
-            prev_state_ppsl = Cluster.SampleStates(t-1, d-1, Observs, true);
+%             prev_jah_ppsl = Cluster.SampleAssociations(t-1, d-1, Observs, Cluster_OTI, true);
+%             prev_state_ppsl = Cluster.SampleStates(t-1, d-1, Observs, true);
             
+            % Calculate artfical density using PDAF approximation
+%             PDAF_prob = 0;
+%             for d = 1:L-1
+            PDAF_prob = PDAF_prob + PDAFEstimatePosterior(t-1, d, Cluster, Observs);
+%             end
+
 %             Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
+            
+            d = unidrnd(L);
+            d_arr(ii) = d;
             
             % Sample and update associations
             jah_ppsl = Cluster.SampleAssociations(t, d, Observs, Cluster_OTI, false);
@@ -162,33 +176,19 @@ while ~all(clusters_done)
             
             % Calculate new posterior
             post_prob = Posterior(t, L, Cluster, Observs, Cluster_OTI);%, Area
-            
-            % Calculate marginal likelihood estimate using PDAF
-%             PL_est = PDAFPredLike(t, L, Cluster, Observs);
-%             PL_est = 0;
-%             for tt = t-L+1:t-1
-%                 for j = 1:Cluster.N
-%                     state = ProjectedPrevious.clusters{c}.particles{ii}.tracks{j}.GetState(tt);
-%                     ass = Cluster.tracks{j}.GetAssoc(tt);
-%                     if ass > 0
-%                         PL_est = PL_est + log( mvnpdf( Observs(tt).r(ass, :), state(1:2)', Par.R) );
-%                     else
-%                         PL_est = PL_est + log( Par.ClutDens );
-%                     end
-%                 end
-%             end
-            
+
             % Update the weight
             weights(ii) = Distn.clusters{c}.weights(ii) ...
                 + (post_prob - sum(state_ppsl) - jah_ppsl) ...
-                - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+                - (prev_post_prob - PDAF_prob);
+%                 - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
 %                 - PL_est;
 
             
             curr_arr(ii) = (post_prob - sum(state_ppsl) - jah_ppsl);
-%           prev_arr(ii) = (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
-%             pred_like_arr(ii) = PL_est;
-            
+%             prev_arr(ii) = (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+%             prev_arr(ii) = (prev_post_prob - PDAF_prob);
+
             post_prob_array(ii) = post_prob;
             state_ppsl_array(ii) = sum(state_ppsl(:));
             jah_ppsl_array(ii) = jah_ppsl;
@@ -204,6 +204,8 @@ while ~all(clusters_done)
         end
         
         assert(~all(isinf(weights)), 'All weights are zero');
+        
+        save_weights = weights;
         
         % Normalise weights
         max_weight = max(weights); max_weight = max_weight(1); weights = weights - max_weight;

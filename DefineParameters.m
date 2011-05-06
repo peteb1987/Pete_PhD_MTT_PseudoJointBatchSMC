@@ -14,7 +14,7 @@ Par.rand_seed = 00;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Par.FLAG_ObsMod = 1;            % 0 = cartesian, 1 = polar,
-Par.FLAG_PseudoJoint = true;    % Use joint tracking for colliding targets
+Par.FLAG_PseudoJoint = false;    % Use joint tracking for colliding targets
 Par.FLAG_DyingTargs = false;    % Targets die at random
 Par.FLAG_UseSearchTrack = false;   % Targets born. Run search track.
 Par.FLAG_AllowDeath = false;    % Targets die at random
