@@ -24,8 +24,10 @@ for k = 1:B
     
     % Remove all observations already used in a track
     k_L = tt - (t-L);
-    obs_x{k}(ass_used{k_L}) = inf;
-    obs_y{k}(ass_used{k_L}) = inf;
+    if k_L > 0
+        obs_x{k}(ass_used{k_L}) = inf;
+        obs_y{k}(ass_used{k_L}) = inf;
+    end
     
 end
 
@@ -82,12 +84,19 @@ for ii = 1:length(BirthSites)
     % Calculate the posterior probability of the track stub
     [ score(ii) ] = Posterior(t, B, pos_track_set, Observs, []);
     
+%     if Par.FLAG_ObsMod == 1
+%         [~, start_range] = cart2pol(KFMean{1}(1), KFMean{1}(2));
+%         score(ii) = score(ii) + B*log(start_range);
+%     end
+    
 end
 
 % Sort sites and select most probable
 sort_arr = [score, cumsum(ones(length(score), 1))];
 sort_arr = sortrows(sort_arr, -1);
 BirthSites = BirthSites(sort_arr(1:min(Par.NumBirthSites,length(BirthSites)), 2));
+
+disp(['Found ' num2str(length(BirthSites)) ' birth sites']);
 
 end
 

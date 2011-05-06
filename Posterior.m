@@ -128,6 +128,5 @@ end
 
 % Combine likelihood and transition density terms
 post = sum(like) + sum(trans) + sum(clut) + sum(assoc) + sum(birth);
-% post = sum(like) + sum(trans) + sum(assoc) + sum(birth);
 
 end

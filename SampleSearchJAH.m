@@ -42,12 +42,12 @@ if u < ProbNewSite
     init_state = zeros(4, 1);
     if Par.FLAG_ObsMod == 0
         init_state(1:2) = Observs(t-B+1).r(BirthSites{i}(1), :)';
-        next_pos = Observs(t-B+2).r(BirthSites{i}(2), :)';
+        next_pos = Observs(t-B+2).r(BirthSites{i}(2), :);
     elseif Par.FLAG_ObsMod == 1
-        init_state(1:2) = pol2cart( Observs(t-B+1).r(BirthSites{i}(1), 1), Observs(t-B+1).r(BirthSites{i}(1), 2) );
-        next_pos = pol2cart( Observs(t-B+2).r(BirthSites{i}(2), 1), Observs(t-B+2).r(BirthSites{i}(2), 2) );
+        [init_state(1), init_state(2)] = pol2cart( Observs(t-B+1).r(BirthSites{i}(1), 1), Observs(t-B+1).r(BirthSites{i}(1), 2) );
+        [next_pos(1), next_pos(2)] = pol2cart( Observs(t-B+2).r(BirthSites{i}(2), 1), Observs(t-B+2).r(BirthSites{i}(2), 2) );
     end
-    init_state(3:4) = (next_pos - init_state(1:2))/Par.P;
+    init_state(3:4) = (next_pos' - init_state(1:2))/Par.P;
     Set.tracks{1}.SetState(t-B+1, init_state);
     
     ppsl_prob = log(1/length(BirthSites)) + log(ProbNewSite);

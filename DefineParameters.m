@@ -3,7 +3,7 @@
 global Par;
 
 % Set random seed
-Par.rand_seed = 0;
+Par.rand_seed = 00;
 
 % 0, with 5 targets, T=50, is standard test
 % 5, with 2 targets, T=20, set next to each other is track-coallescing test
@@ -13,9 +13,12 @@ Par.rand_seed = 0;
 %%% Flags                                                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.FLAG_ObsMod = 0;            % 0 = cartesian, 1 = polar,
+Par.FLAG_ObsMod = 1;            % 0 = cartesian, 1 = polar,
 Par.FLAG_PseudoJoint = true;    % Use joint tracking for colliding targets
 Par.FLAG_DyingTargs = false;    % Targets die at random
+Par.FLAG_UseSearchTrack = false;   % Targets born. Run search track.
+Par.FLAG_AllowDeath = false;    % Targets die at random
+Par.FLAG_InitTargs = true;      % Initialise targets so they don't have to be sought
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Scene parameters                                                    %%%
@@ -53,8 +56,11 @@ Par.B = [P^2/2*eye(2); P*eye(2)];                                          % 2D 
 Par.Q = Par.ProcNoiseVar * ...
     [P^3/3 0 P^2/2 0; 0 P^3/3 0 P^2/2; P^2/2 0 P 0; 0 P^2/2 0 P];          % Gaussian motion covariance matrix (discretised continous random model)
 %     [P^4/4 0 P^3/2 0; 0 P^4/4 0 P^3/2; P^3/2 0 P^2 0; 0 P^3/2 0 P^2];      % Gaussian motion covariance matrix (piecewise constant acceleration discrete random model)
-Par.ExpBirth = 0.5;                                                        % Expected number of new targets in a frame (poisson deistributed)
+Par.ExpBirth = 0.1;                                                        % Expected number of new targets in a frame (poisson deistributed)
 Par.PDeath = 0.01;                                                          % Probability of a (given) target death in a frame
+if ~Par.FLAG_AllowDeath
+    Par.PDeath = 0;
+end
 
 Par.Qchol = chol(Par.Q);                                                   % Cholesky decompostion of Par.Q
 
@@ -84,8 +90,8 @@ Par.NumPart = 500;                      % Number of particles
 
 Par.PRemove = 0.05;                     % Probability of removing target in a given particle
 Par.BirthWindow = 5;                    % Join-the-dot length for target births
-Par.NumBirthSites = 100;                % Number of birth sites on the shortlist in each frame
-Par.SearchPromoteThresh = 0.99;         % Proportion of particles above which the search track is promoted
+Par.NumBirthSites = 50;                % Number of birth sites on the shortlist in each frame
+Par.SearchPromoteThresh = 0.5;         % Proportion of particles above which the search track is promoted
 
 Par.ResamThresh = 0.1;                  % Resampling threshold as a proportion of maximum
 Par.ResampleLowWeightThresh = 30;       % Orders of magnitude below max for particle killing

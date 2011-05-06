@@ -35,6 +35,7 @@ for j = 1:N
 %         TargSpec(j).state(2) = unifrnd(-0.5*Par.Xmax, 0.5*Par.Xmax);
 %     elseif Par.FLAG_ObsMod == 1
       rng = unifrnd(0.15*Par.Xmax, 0.25*Par.Xmax);
+%       rng = unifrnd(0.3*Par.Xmax, 0.5*Par.Xmax);
 %         rng = unifrnd(0.10*Par.Xmax, 0.50*Par.Xmax);
         bng = unifrnd(-pi, pi);
         TargSpec(j).state(1) = rng*cos(bng);

@@ -3,9 +3,14 @@ function [ass, count, present] = AnalyseAss( correct, Distn, fr)
 
 global Par;
 
-ass = cell(Distn.N, 1);
-count = zeros(Distn.N, fr);
-present = zeros(Distn.N, fr);
+num_targs = 0;
+for c = 1:Distn.N
+    num_targs = num_targs + Distn.clusters{c}.N;
+end
+
+ass = cell(num_targs, 1);
+count = zeros(num_targs, fr);
+present = zeros(num_targs, fr);
 
 for c = 1:Distn.N
     

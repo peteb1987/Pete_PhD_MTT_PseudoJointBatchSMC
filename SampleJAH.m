@@ -70,24 +70,48 @@ for j = order
             if Par.FLAG_ObsMod == 0
                 if d>L
                     mu = C*p_x;
-                    S = R + C*(k*Q)*C';
+%                     S = R + C*(k*Q)*C';
+                    S = R;
+                    for kk = 0:k-1
+                        S = S + C*(A^kk)*Q*(A^kk)'*C';
+                    end
                 else
-                    nV = R+C*(d*Q)*C';
-                    invSig = C'*(R\C) + ((A^d)'*C'/nV)*C*(A^d) + invQ/k;
+%                     yV = R+C*(d*Q)*C';
+                    xV = zeros(4);
+                    for kk = 0:k-1
+                        xV = xV + (A^kk)*Q*(A^kk)';
+                    end
+                    yV = R + C*xV*C';
+%                     for kk = 0:d-1
+%                         yV = yV + C*(A^kk)*Q*(A^kk)'*C';
+%                     end
+                    invSig = C'*(R\C) + ((A^d)'*C'/yV)*C*(A^d) + inv(xV);
                     invS = invR - ((R\C)/invSig)*C'/R;
                     S = inv(invS);
-                    mu = invS \ ( (((R\C)*(invSig\(A^d)')*C'/nV)*next_y) + (((R\(C/invSig))/(k*Q))*(A^k)*x) );
+                    mu = invS \ ( (((R\C)*(invSig\(A^d)')*C'/yV)*next_y) + (((R\(C/invSig))/xV)*(A^k)*x) );
                 end
             elseif Par.FLAG_ObsMod == 1
                 if d>L
                     mu = [p_bng; p_rng];
-                    S = R + J*(k*Q)*J';
+%                     S = R + J*(k*Q)*J';
+                    S = R;
+                    for kk = 0:k-1
+                        S = S + J*(A^k)*Q*(A^k)'*J';
+                    end
                 else
-                    nV = (R+next_J*(d*Q)*next_J');
-                    invSig = J'*(R\J) + ((A^d)'*next_J'/nV)*next_J*(A^d) + invQ/k;
+%                     nV = (R+next_J*(d*Q)*next_J');
+                    xV = zeros(4);
+                    for kk = 0:k-1
+                        xV = xV + (A^kk)*Q*(A^kk)';
+                    end
+                    yV = R + next_J * xV * next_J';
+%                     for kk = 0:d-1
+%                         yV = yV + next_J*(A^kk)*Q*(A^kk)'*next_J';
+%                     end
+                    invSig = J'*(R\J) + ((A^d)'*next_J'/yV)*next_J*(A^d) + inv(xV);
                     invS = invR - ((R\J)/invSig)*J'/R;
                     S = inv(invS);
-                    mu = [p_bng; p_rng] - J*p_x + invS \ ( (((R\J)*(invSig\(A^d)')*next_J'/nV)*(next_y-next_p_pol+next_J*next_p_x)) + (((R\(J/invSig))/(k*Q))*(A^k)*x) );
+                    mu = [p_bng; p_rng] - J*p_x + invS \ ( (((R\J)*(invSig\(A^d)')*next_J'/yV)*(next_y-next_p_pol+next_J*next_p_x)) + (((R\(J/invSig))/xV)*(A^k)*x) );
                 end
             end
             
@@ -130,7 +154,7 @@ for j = order
             ppsl_weights = ppsl_weights/sum(ppsl_weights);
             
             % Set minimum value for clutter as 1-PDetect
-            %         if (d>L)&&(ppsl_weights(N+1)<(1-Par.PDetect))
+%             if (d>L)&&(ppsl_weights(N+1)<(1-Par.PDetect))
             if (ppsl_weights(N+1)<(1-Par.PDetect))
                 ppsl_weights(1:N) = Par.PDetect*ppsl_weights(1:N)/sum(ppsl_weights(1:N));
                 ppsl_weights(N+1) = 1-Par.PDetect;

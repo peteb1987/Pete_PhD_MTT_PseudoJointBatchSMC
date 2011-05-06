@@ -13,26 +13,32 @@ ESS_post = cell(Par.T, Par.NumTgts);
 ESS_pre = cell(Par.T, Par.NumTgts);
 num_resamples = zeros(Par.NumTgts, 1);
 
-% Initialise particle set - no targets
-init_track_distn = cell(0, 1);
-InitEst = MTDistn(init_track_distn);
-
-% % Initialise particle set - separate
-% init_track = cell(Par.NumTgts, 1);
-% init_track_distn = cell(Par.NumTgts, 1);
-% for j = 1:Par.NumTgts
-%     init_track{j} = Track(0, 1, {InitState{j}-[InitState{j}(3:4)' 0 0]'}, 0);
-%     init_track_distn{j} = TrackGroupDistn(j, repmat({TrackSet(j, init_track(j))}, Par.NumPart, 1));
-% end
-% InitEst = MTDistn(init_track_distn);
-
-% % Initialise particle set - together
-% init_track = cell(Par.NumTgts, 1);
-% for j = 1:Par.NumTgts
-%     init_track{j} = Track(0, 1, {InitState{j}-[InitState{j}(3:4)' 0 0]'}, 0);
-% end
-% init_track_distn = TrackGroupDistn(1:Par.NumTgts, repmat({TrackSet(1:Par.NumTgts, init_track)}, Par.NumPart, 1));
-% InitEst = MTDistn({init_track_distn});
+if ~Par.FLAG_InitTargs
+    
+    % Initialise particle set - no targets
+    init_track_distn = cell(0, 1);
+    InitEst = MTDistn(init_track_distn);
+    
+else
+    
+    % Initialise particle set - separate
+    init_track = cell(Par.NumTgts, 1);
+    init_track_distn = cell(Par.NumTgts, 1);
+    for j = 1:Par.NumTgts
+        init_track{j} = Track(0, 1, {InitState{j}-[InitState{j}(3:4)' 0 0]'}, 0);
+        init_track_distn{j} = TrackGroupDistn(j, repmat({TrackSet(j, init_track(j))}, Par.NumPart, 1));
+    end
+    InitEst = MTDistn(init_track_distn);
+    
+    % % Initialise particle set - together
+    % init_track = cell(Par.NumTgts, 1);
+    % for j = 1:Par.NumTgts
+    %     init_track{j} = Track(0, 1, {InitState{j}-[InitState{j}(3:4)' 0 0]'}, 0);
+    % end
+    % init_track_distn = TrackGroupDistn(1:Par.NumTgts, repmat({TrackSet(1:Par.NumTgts, init_track)}, Par.NumPart, 1));
+    % InitEst = MTDistn({init_track_distn});
+    
+end
 
 % Initialise search track
 search_track = Track(0, 0, [], []);
@@ -122,6 +128,7 @@ state_ppsl_array = zeros(Par.NumPart, 1);
 jah_ppsl_array = zeros(Par.NumPart, 1);
 curr_arr = zeros(Par.NumPart, 1);
 % prev_arr = zeros(Par.NumPart, 1);
+% pred_like_arr = zeros(Par.NumPart, 1);
 
 % Collision detection loop
 clusters_done = false(Distn.N, 1);
@@ -138,28 +145,49 @@ while ~all(clusters_done)
             
             Cluster = Distn.clusters{c}.particles{ii};
             
-%             prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
-%             prev_jah_ppsl = Cluster.SampleAssociations(t-1, L-1, Observs, true);
-%             prev_state_ppsl = Cluster.SampleStates(t-1, L-1, Observs, true);
+%             d = unidrnd(L);
+            d = L;
+            
+            prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
+            prev_jah_ppsl = Cluster.SampleAssociations(t-1, d-1, Observs, Cluster_OTI, true);
+            prev_state_ppsl = Cluster.SampleStates(t-1, d-1, Observs, true);
             
 %             Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
             
             % Sample and update associations
-            jah_ppsl = Cluster.SampleAssociations(t, L, Observs, Cluster_OTI, false);
+            jah_ppsl = Cluster.SampleAssociations(t, d, Observs, Cluster_OTI, false);
             
             % Sample and update states
-            state_ppsl = Cluster.SampleStates(t, L, Observs, false);
+            state_ppsl = Cluster.SampleStates(t, d, Observs, false);
             
             % Calculate new posterior
             post_prob = Posterior(t, L, Cluster, Observs, Cluster_OTI);%, Area
             
+            % Calculate marginal likelihood estimate using PDAF
+%             PL_est = PDAFPredLike(t, L, Cluster, Observs);
+%             PL_est = 0;
+%             for tt = t-L+1:t-1
+%                 for j = 1:Cluster.N
+%                     state = ProjectedPrevious.clusters{c}.particles{ii}.tracks{j}.GetState(tt);
+%                     ass = Cluster.tracks{j}.GetAssoc(tt);
+%                     if ass > 0
+%                         PL_est = PL_est + log( mvnpdf( Observs(tt).r(ass, :), state(1:2)', Par.R) );
+%                     else
+%                         PL_est = PL_est + log( Par.ClutDens );
+%                     end
+%                 end
+%             end
+            
             % Update the weight
             weights(ii) = Distn.clusters{c}.weights(ii) ...
-                + (post_prob - sum(state_ppsl) - jah_ppsl);%...
-%                    - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+                + (post_prob - sum(state_ppsl) - jah_ppsl) ...
+                - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+%                 - PL_est;
+
             
             curr_arr(ii) = (post_prob - sum(state_ppsl) - jah_ppsl);
 %           prev_arr(ii) = (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
+%             pred_like_arr(ii) = PL_est;
             
             post_prob_array(ii) = post_prob;
             state_ppsl_array(ii) = sum(state_ppsl(:));
@@ -170,7 +198,7 @@ while ~all(clusters_done)
             end
             
             if isinf(weights(ii))
-                disp(['Uh-oh: Zero weight in cluster ' num2str(c) ', particle ' num2str(ii)]);
+%                 disp(['Uh-oh: Zero weight in cluster ' num2str(c) ', particle ' num2str(ii)]);
             end
             
         end
@@ -216,7 +244,7 @@ while ~all(clusters_done)
 end
 
 % Search track processing
-if t > Par.BirthWindow
+if Par.FLAG_UseSearchTrack && t >= Par.BirthWindow
     
     % Find birth sites
     BirthSites = FindBirthSites( t, L, Observs, ass_used );
@@ -251,7 +279,8 @@ if t > Par.BirthWindow
             end
             
             % Update the weight
-            weights(ii) = (post_prob + birth_prob - sum(state_ppsl) - assoc_ppsl);
+            weights(ii) = SearchTrack.weights(ii) + ...
+                (post_prob + birth_prob - sum(state_ppsl) - assoc_ppsl);
             
             post_prob_array(ii) = post_prob;
             state_ppsl_array(ii) = sum(state_ppsl(:));
@@ -276,10 +305,12 @@ if t > Par.BirthWindow
         
         % Resample
 %         PlotTracks( MTDistn({SearchTrack}) )
-        SearchTrack = SystematicResample(SearchTrack, weights);
+%         SearchTrack = SystematicResample(SearchTrack, weights);
+        [SearchTrack, weights] = ConservativeResample(SearchTrack, weights);
 %         PlotTracks( MTDistn({SearchTrack}) )
         
         origins=zeros(Par.NumPart,1); for ii=1:Par.NumPart, origins(ii)=SearchTrack.particles{ii}.members; end
+        origins(origins==0)=[];
         most_common = mode(origins);
         proportion = sum(most_common==origins)/Par.NumPart;
         disp(['*** Most promising birth site has ' num2str(100*proportion) '% of the particles: ' num2str(most_common)]);
@@ -295,13 +326,33 @@ if t > Par.BirthWindow
                 end
             end
             
-            SearchTrack.members = id;
+            % Copy the search track for promotion
+            Promoted = SearchTrack.Copy;
+            
+            % Set the track id in each particle and remove those with the wrong id (set weight to 0)
+            Promoted.members = id;
             for ii = 1:Par.NumPart
-                SearchTrack.particles{ii}.members = id;
+                if Promoted.particles{ii}.members ~= most_common
+                    weights(ii) = -inf;
+                end
+                Promoted.particles{ii}.members = id;
             end
             
-            Distn.clusters = [Distn.clusters; {SearchTrack}];
+            % Normalise weights
+            max_weight = max(weights); max_weight = max_weight(1); weights = weights - max_weight;
+            weights = exp(weights); weights = weights/sum(weights);  weights = log(weights);
+            [Promoted, weights] = LowWeightRemoval(Promoted, weights);
+            
+            Distn.clusters = [Distn.clusters; {Promoted}];
             Distn.N = Distn.N + 1;
+            
+%             % Remove the used particles from the search track
+%             for ii = 1:Par.NumPart
+%                 if SearchTrack.particles{ii}.members == most_common
+%                     weights(ii) = -inf;
+%                 end
+%             end
+%             [SearchTrack, weights] = LowWeightRemoval(SearchTrack, weights);
             
             % Reinitialise search track
             search_track = Track(0, 0, [], []);

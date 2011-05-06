@@ -12,8 +12,11 @@ groups = cellfun(@(x){x.members}, Distn.clusters);
 new_groups = cell(0,1);
 new_groups_ind  = cell(0,1);
 
+% Finish 2 frames before the end of the window, as long as there's enough
+stop = max(t-L+1, t-2);
+
 % Loop through time
-for tt = t-L+1:t
+for tt = t-L+1:stop
     
     k = tt - (t-L);
     
