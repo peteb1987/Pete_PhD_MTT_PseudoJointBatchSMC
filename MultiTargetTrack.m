@@ -151,22 +151,22 @@ while ~all(clusters_done)
             Cluster = Distn.clusters{c}.particles{ii};
             
 %             d = unidrnd(L);
-%             d = L;
+            d = L;
             
-            prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
+%             prev_post_prob = Posterior(t-1, L-1, Cluster, Observs);
 %             prev_jah_ppsl = Cluster.SampleAssociations(t-1, d-1, Observs, Cluster_OTI, true);
 %             prev_state_ppsl = Cluster.SampleStates(t-1, d-1, Observs, true);
             
             % Calculate artfical density using PDAF approximation
 %             PDAF_prob = 0;
 %             for d = 1:L-1
-            PDAF_prob = PDAF_prob + PDAFEstimatePosterior(t-1, d, Cluster, Observs);
+%             PDAF_prob = PDAF_prob + PDAFEstimatePosterior(t-1, d-1, Cluster, Observs);
 %             end
 
 %             Cluster_OTI = cellfun(@(x) x(c), ObsTargIndexes(1:t));
             
-            d = unidrnd(L);
-            d_arr(ii) = d;
+%             d = unidrnd(L);
+%             d_arr(ii) = d;
             
             % Sample and update associations
             jah_ppsl = Cluster.SampleAssociations(t, d, Observs, Cluster_OTI, false);
@@ -179,8 +179,8 @@ while ~all(clusters_done)
 
             % Update the weight
             weights(ii) = Distn.clusters{c}.weights(ii) ...
-                + (post_prob - sum(state_ppsl) - jah_ppsl) ...
-                - (prev_post_prob - PDAF_prob);
+                + (post_prob - sum(state_ppsl) - jah_ppsl);% ...
+%                 - (prev_post_prob);% - PDAF_prob);
 %                 - (prev_post_prob - sum(prev_state_ppsl) - prev_jah_ppsl);
 %                 - PL_est;
 
