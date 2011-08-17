@@ -3,7 +3,7 @@
 global Par;
 
 % Set random seed
-Par.rand_seed = 00;
+Par.rand_seed = 1;
 
 % 0, with 5 targets, T=50, is standard test
 % 5, with 2 targets, T=20, set next to each other is track-coallescing test
@@ -13,12 +13,12 @@ Par.rand_seed = 00;
 %%% Flags                                                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.FLAG_ObsMod = 1;            % 0 = cartesian, 1 = polar,
+Par.FLAG_ObsMod = 0;            % 0 = cartesian, 1 = polar,
 Par.FLAG_PseudoJoint = false;    % Use joint tracking for colliding targets
-Par.FLAG_DyingTargs = false;    % Targets die at random
-Par.FLAG_UseSearchTrack = false;   % Targets born. Run search track.
-Par.FLAG_AllowDeath = false;    % Targets die at random
-Par.FLAG_InitTargs = true;      % Initialise targets so they don't have to be sought
+Par.FLAG_DyingTargs = true;    % Targets die at random
+Par.FLAG_UseSearchTrack = true;   % Targets born. Run search track.
+Par.FLAG_AllowDeath = true;    % Targets die at random
+Par.FLAG_InitTargs = false;      % Initialise targets so they don't have to be sought
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Scene parameters                                                    %%%
@@ -68,8 +68,8 @@ Par.Qchol = chol(Par.Q);                                                   % Cho
 %%% Observation model parameters                                        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Par.ExpClutObs = 1000;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
-Par.PDetect = 0.75;                         % Probability of detecting a target in a given frame
+Par.ExpClutObs = 200;                      % Number of clutter objects expected in scene - 1000 is dense for Xmax=500, 160 for Xmax=200
+Par.PDetect = 0.9;                         % Probability of detecting a target in a given frame
 
 if Par.FLAG_ObsMod == 0
     Par.ObsNoiseVar = 1;                % Observation noise variance
@@ -89,9 +89,9 @@ Par.L = 5;                              % Length of rolling window
 Par.NumPart = 500;                      % Number of particles
 
 Par.PRemove = 0.05;                     % Probability of removing target in a given particle
-Par.BirthWindow = 5;                    % Join-the-dot length for target births
+Par.BirthWindow = 3;                    % Join-the-dot length for target births
 Par.NumBirthSites = 50;                % Number of birth sites on the shortlist in each frame
-Par.SearchPromoteThresh = 0.5;         % Proportion of particles above which the search track is promoted
+Par.SearchPromoteThresh = 0.1;         % Proportion of particles above which the search track is promoted
 
 Par.ResamThresh = 0.1;                  % Resampling threshold as a proportion of maximum
 Par.ResampleLowWeightThresh = 30;       % Orders of magnitude below max for particle killing

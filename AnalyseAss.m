@@ -27,7 +27,7 @@ for c = 1:Distn.N
                 end
             end
             
-%             count(jj, t) = sum(ass{jj}(:, t)==correct(t, jj));
+            count(jj, t) = sum(ass{jj}(:, t)==correct(t, jj));
             
         end
         
@@ -35,9 +35,9 @@ for c = 1:Distn.N
     
 end
 
-% figure, hold on
-% for j = 1:Par.NumTgts
-%     plot(count(j, :), 'color', [0, rand, rand])
-% end
+figure, hold on
+for j = 1:Par.NumTgts
+    plot(count(j, :), 'color', [0, rand, rand])
+end
 
 end

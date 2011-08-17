@@ -21,9 +21,9 @@ TargSpec = repmat(struct('birth', 0, 'death', 0, 'state', zeros(4, 1), 'acc', []
 
 % Set default parameters
 for j = 1:N
-    TargSpec(j).birth = 1;
+    TargSpec(j).birth = unidrnd(floor(T/4));
     if Par.FLAG_DyingTargs
-        TargSpec(j).death = unidrnd(T);
+        TargSpec(j).death = T - unidrnd(floor(T/4));
     else
         TargSpec(j).death = T + 1;
         [~]=unidrnd(T);
@@ -34,7 +34,7 @@ for j = 1:N
 %         TargSpec(j).state(1) = unifrnd(-0.5*Par.Xmax, 0.5*Par.Xmax);
 %         TargSpec(j).state(2) = unifrnd(-0.5*Par.Xmax, 0.5*Par.Xmax);
 %     elseif Par.FLAG_ObsMod == 1
-      rng = unifrnd(0.15*Par.Xmax, 0.25*Par.Xmax);
+      rng = unifrnd(0.25*Par.Xmax, 0.35*Par.Xmax);
 %       rng = unifrnd(0.3*Par.Xmax, 0.5*Par.Xmax);
 %         rng = unifrnd(0.10*Par.Xmax, 0.50*Par.Xmax);
         bng = unifrnd(-pi, pi);

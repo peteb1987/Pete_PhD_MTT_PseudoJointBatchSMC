@@ -31,7 +31,7 @@ for j = order
     end
     
     % With some probability, end the track
-    if (rand < Par.PRemove) && (Set.tracks{j}.death == t+1) && (first_miss > 0)
+    if (rand < Par.PRemove) && (Set.tracks{j}.birth < t-L) && (Set.tracks{j}.death == t+1) && (first_miss > 0)
         Set.tracks{j}.EndTrack(first_miss)
         jah_ppsl(j, L) = log(Par.PRemove);
     end
